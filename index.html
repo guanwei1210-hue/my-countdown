@@ -350,7 +350,7 @@
   // ─────────────────────────────────────────────
   const firebaseConfig = {
   apiKey: "AIzaSyB5phXwiG2wJ2_JxsyL78vHdpmkLxdWYzI",
-  authDomain: "my-countdown-f140e.firebaseapp.com",
+  authDomain: "guanwei1210-hue.github.io",
   projectId: "my-countdown-f140e",
   storageBucket: "my-countdown-f140e.firebasestorage.app",
   messagingSenderId: "814230404626",
@@ -369,16 +369,25 @@
   // ── AUTH ──
   function signIn() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithRedirect(provider);
+    provider.setCustomParameters({ prompt: 'select_account' });
+    auth.signInWithPopup(provider).catch(e => {
+      if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
+        auth.signInWithRedirect(provider);
+      } else {
+        alert('Sign-in failed: ' + e.message);
+      }
+    });
   }
   function signOut() {
     auth.signOut();
   }
 
-  // Handle redirect result when returning from Google sign-in
-  auth.getRedirectResult().catch(e => {
-    if (e && e.code !== 'auth/popup-closed-by-user') {
-      console.error('Redirect sign-in error:', e.message);
+  // Handle redirect result on page load (mobile fallback)
+  auth.getRedirectResult().then(result => {
+    // handled by onAuthStateChanged
+  }).catch(e => {
+    if (e.code && e.code !== 'auth/popup-closed-by-user') {
+      console.error('Auth error:', e.code, e.message);
     }
   });
 
