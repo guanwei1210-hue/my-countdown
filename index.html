@@ -348,7 +348,7 @@
   // PASTE YOUR FIREBASE CONFIG HERE
   // (replace all the placeholder values below)
   // ─────────────────────────────────────────────
-const firebaseConfig = {
+  const firebaseConfig = {
   apiKey: "AIzaSyB5phXwiG2wJ2_JxsyL78vHdpmkLxdWYzI",
   authDomain: "my-countdown-f140e.firebaseapp.com",
   projectId: "my-countdown-f140e",
@@ -367,9 +367,23 @@ const firebaseConfig = {
   const LOCAL_KEY = 'countdown_app_v1';
 
   // ── AUTH ──
+  // signInWithPopup works on GitHub Pages without needing Firebase Hosting
   function signIn() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).catch(e => alert('Sign-in failed: ' + e.message));
+    provider.addScope('email');
+    provider.addScope('profile');
+    provider.setCustomParameters({ prompt: 'select_account' });
+    auth.signInWithPopup(provider)
+      .then(() => { /* handled by onAuthStateChanged */ })
+      .catch(e => {
+        if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+          // user closed — do nothing
+        } else if (e.code === 'auth/popup-blocked') {
+          alert('Popup was blocked.\n\nPlease allow popups for this site:\n1. Look for a blocked popup icon in your address bar\n2. Click it → Allow popups\n3. Try signing in again');
+        } else {
+          alert('Sign-in error: ' + e.message);
+        }
+      });
   }
   function signOut() {
     auth.signOut();
