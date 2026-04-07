@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Countdown App</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f3;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
+      color: #1a1a1a;
+    }
+
+    .app-wrap { width: 100%; max-width: 560px; }
+
+    .input-card {
+      background: #ffffff;
+      border: 0.5px solid rgba(0,0,0,0.12);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .field-label {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .optional-tag { font-size: 11px; color: #999; margin-left: 6px; }
+    .field-wrap { margin-bottom: 16px; }
+
+    input[type="text"], input[type="date"] {
+      width: 100%;
+      padding: 9px 12px;
+      font-size: 14px;
+      border: 0.5px solid rgba(0,0,0,0.2);
+      border-radius: 8px;
+      outline: none;
+      background: #fff;
+      color: #1a1a1a;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    input[type="text"]:focus, input[type="date"]:focus { border-color: rgba(0,0,0,0.5); }
+    input.error { border-color: #e53e3e !important; }
+
+    .error-msg { font-size: 12px; color: #e53e3e; margin-top: 4px; display: none; }
+    .error-msg.visible { display: block; }
+
+    .divider { border: none; border-top: 0.5px solid rgba(0,0,0,0.1); margin: 16px 0; }
+
+    .color-options { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+    .color-swatch {
+      width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+      border: 2.5px solid transparent;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .color-swatch:hover { transform: scale(1.12); }
+    .color-swatch.selected { border-color: #1a1a1a; }
+
+    .btn-primary {
+      background: #1a1a1a; color: #fff;
+      border: none; border-radius: 8px;
+      padding: 10px 20px; font-size: 14px; font-weight: 500;
+      cursor: pointer; width: 100%; margin-top: 12px;
+      font-family: inherit;
+    }
+    .btn-primary:hover { background: #333; }
+
+    .saved-banner {
+      display: flex; align-items: center; gap: 8px;
+      background: #f0fdf4; border: 0.5px solid #86efac;
+      border-radius: 8px; padding: 8px 12px;
+      margin-bottom: 16px; font-size: 12px; color: #16a34a;
+    }
+    .saved-dot { width: 7px; height: 7px; border-radius: 50%; background: #16a34a; flex-shrink: 0; }
+
+    /* countdown card base */
+    .countdown-card {
+      border-radius: 16px; padding: 2rem 1.5rem;
+      text-align: center; transition: background 0.4s;
+    }
+    .event-title { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+    .event-date-label { font-size: 13px; margin-bottom: 2rem; }
+
+    .tiles { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .tile { border-radius: 14px; padding: 1rem 1.25rem; min-width: 74px; }
+    .tile-num { font-size: 38px; font-weight: 600; line-height: 1; }
+    .tile-lbl { font-size: 11px; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    .weeks-pill {
+      display: inline-block; border-radius: 99px;
+      padding: 6px 18px; font-size: 14px; margin-bottom: 1.5rem;
+    }
+
+    .progress-section { margin-bottom: 1rem; }
+    .progress-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+    .progress-wrap { border-radius: 99px; height: 8px; overflow: hidden; }
+    .progress-bar { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+
+    .status-msg { font-size: 13px; margin-top: 0.75rem; }
+    .tz-label { font-size: 11px; margin-top: 6px; }
+
+    .past-badge {
+      display: inline-block; font-size: 12px;
+      padding: 3px 10px; border-radius: 8px; margin-bottom: 1rem;
+    }
+
+    .btn-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 1.25rem; }
+    .edit-btn, .clear-btn {
+      border-radius: 8px; padding: 7px 16px; font-size: 13px;
+      cursor: pointer; font-family: inherit; border: 0.5px solid;
+    }
+
+    /* projects */
+    .projects-section { margin-top: 1.5rem; text-align: left; }
+    .projects-divider { border: none; border-top: 0.5px solid; margin-bottom: 1rem; opacity: 0.2; }
+    .projects-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .projects-title { font-size: 13px; font-weight: 500; }
+    .projects-count { font-size: 12px; opacity: 0.6; }
+    .add-project-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .add-project-row input {
+      flex: 1; font-size: 13px; padding: 7px 10px;
+      border-radius: 8px; border: 0.5px solid;
+      background: rgba(255,255,255,0.12); color: inherit;
+      outline: none; font-family: inherit;
+    }
+    .add-project-row input::placeholder { opacity: 0.5; }
+    .add-project-row input:focus { border-color: rgba(255,255,255,0.5); }
+    .btn-add {
+      flex-shrink: 0; padding: 7px 14px; font-size: 13px;
+      border-radius: 8px; border: 0.5px solid; cursor: pointer;
+      font-weight: 500; background: rgba(255,255,255,0.15);
+      color: inherit; font-family: inherit; transition: background 0.15s;
+    }
+    .btn-add:hover { background: rgba(255,255,255,0.25); }
+
+    .projects-list { display: flex; flex-direction: column; gap: 6px; }
+    .project-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+    }
+    .project-check {
+      width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid;
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center; opacity: 0.8;
+    }
+    .project-check svg { width: 10px; height: 10px; }
+    .project-name { flex: 1; font-size: 13px; }
+    .project-delete {
+      background: none; border: none; cursor: pointer; opacity: 0;
+      font-size: 14px; padding: 2px 6px; border-radius: 4px;
+      color: inherit; transition: opacity 0.15s; line-height: 1;
+    }
+    .project-item:hover .project-delete { opacity: 0.5; }
+    .project-delete:hover { opacity: 1 !important; }
+    .projects-empty { font-size: 12px; opacity: 0.45; text-align: center; padding: 10px 0; }
+
+    /* ── THEMES ── */
+
+    /* Default */
+    .theme-default .countdown-card { background: #ffffff; border: 0.5px solid rgba(0,0,0,0.1); }
+    .theme-default .event-title { color: #1a1a1a; }
+    .theme-default .event-date-label { color: #666; }
+    .theme-default .tile { background: #f5f5f3; }
+    .theme-default .tile-num { color: #1a1a1a; }
+    .theme-default .tile-lbl { color: #888; }
+    .theme-default .weeks-pill { background: #f5f5f3; color: #666; }
+    .theme-default .weeks-pill strong { color: #1a1a1a; }
+    .theme-default .progress-wrap { background: #ebebea; }
+    .theme-default .progress-bar { background: #1a1a1a; }
+    .theme-default .progress-header { color: #888; }
+    .theme-default .status-msg { color: #666; }
+    .theme-default .tz-label { color: #aaa; }
+    .theme-default .edit-btn { background: #fff; border-color: rgba(0,0,0,0.2); color: #555; }
+    .theme-default .edit-btn:hover { background: #f5f5f3; }
+    .theme-default .clear-btn { background: #fff; border-color: rgba(0,0,0,0.12); color: #999; }
+    .theme-default .clear-btn:hover { background: #f5f5f3; }
+    .theme-default .past-badge { background: #fef9c3; color: #854d0e; }
+    .theme-default .projects-title { color: #1a1a1a; }
+    .theme-default .projects-count { color: #888; }
+    .theme-default .add-project-row input { border-color: rgba(0,0,0,0.2); background: #f9f9f8; color: #1a1a1a; }
+    .theme-default .add-project-row input:focus { border-color: rgba(0,0,0,0.4); }
+    .theme-default .btn-add { border-color: rgba(0,0,0,0.2); background: #f5f5f3; color: #1a1a1a; }
+    .theme-default .project-item { background: #f5f5f3; }
+    .theme-default .project-name { color: #1a1a1a; }
+    .theme-default .project-check { border-color: rgba(0,0,0,0.3); color: #888; }
+    .theme-default .project-delete { color: #666; }
+    .theme-default .projects-empty { color: #aaa; }
+    .theme-default .projects-divider { border-color: rgba(0,0,0,0.1); opacity: 1; }
+
+    /* Indigo */
+    .theme-indigo .countdown-card { background: #3730a3; }
+    .theme-indigo .event-title { color: #eef2ff; }
+    .theme-indigo .event-date-label { color: #c7d2fe; }
+    .theme-indigo .tile { background: rgba(255,255,255,0.12); }
+    .theme-indigo .tile-num { color: #fff; }
+    .theme-indigo .tile-lbl { color: #a5b4fc; }
+    .theme-indigo .weeks-pill { background: rgba(255,255,255,0.12); color: #c7d2fe; }
+    .theme-indigo .weeks-pill strong { color: #fff; }
+    .theme-indigo .progress-wrap { background: rgba(255,255,255,0.15); }
+    .theme-indigo .progress-bar { background: #a5b4fc; }
+    .theme-indigo .progress-header { color: #c7d2fe; }
+    .theme-indigo .status-msg { color: #c7d2fe; }
+    .theme-indigo .tz-label { color: #818cf8; }
+    .theme-indigo .edit-btn { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); color: #e0e7ff; }
+    .theme-indigo .edit-btn:hover { background: rgba(255,255,255,0.18); }
+    .theme-indigo .clear-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); color: #c7d2fe; }
+    .theme-indigo .past-badge { background: rgba(255,255,255,0.15); color: #fde68a; }
+    .theme-indigo .projects-title { color: #eef2ff; }
+    .theme-indigo .projects-count { color: #a5b4fc; }
+    .theme-indigo .add-project-row input { border-color: rgba(255,255,255,0.25); color: #eef2ff; }
+    .theme-indigo .btn-add { border-color: rgba(255,255,255,0.25); color: #eef2ff; }
+    .theme-indigo .project-item { background: rgba(255,255,255,0.08); }
+    .theme-indigo .project-name { color: #eef2ff; }
+    .theme-indigo .project-check { border-color: rgba(255,255,255,0.4); color: #a5b4fc; }
+    .theme-indigo .project-delete { color: #eef2ff; }
+    .theme-indigo .projects-empty { color: #a5b4fc; }
+
+    /* Teal */
+    .theme-teal .countdown-card { background: #0f766e; }
+    .theme-teal .event-title { color: #f0fdfa; }
+    .theme-teal .event-date-label { color: #99f6e4; }
+    .theme-teal .tile { background: rgba(255,255,255,0.12); }
+    .theme-teal .tile-num { color: #fff; }
+    .theme-teal .tile-lbl { color: #5eead4; }
+    .theme-teal .weeks-pill { background: rgba(255,255,255,0.12); color: #99f6e4; }
+    .theme-teal .weeks-pill strong { color: #fff; }
+    .theme-teal .progress-wrap { background: rgba(255,255,255,0.15); }
+    .theme-teal .progress-bar { background: #5eead4; }
+    .theme-teal .progress-header { color: #99f6e4; }
+    .theme-teal .status-msg { color: #99f6e4; }
+    .theme-teal .tz-label { color: #2dd4bf; }
+    .theme-teal .edit-btn { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); color: #ccfbf1; }
+    .theme-teal .edit-btn:hover { background: rgba(255,255,255,0.18); }
+    .theme-teal .clear-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); color: #99f6e4; }
+    .theme-teal .past-badge { background: rgba(255,255,255,0.15); color: #fde68a; }
+    .theme-teal .projects-title { color: #f0fdfa; }
+    .theme-teal .projects-count { color: #5eead4; }
+    .theme-teal .add-project-row input { border-color: rgba(255,255,255,0.25); color: #f0fdfa; }
+    .theme-teal .btn-add { border-color: rgba(255,255,255,0.25); color: #f0fdfa; }
+    .theme-teal .project-item { background: rgba(255,255,255,0.08); }
+    .theme-teal .project-name { color: #f0fdfa; }
+    .theme-teal .project-check { border-color: rgba(255,255,255,0.4); color: #5eead4; }
+    .theme-teal .project-delete { color: #f0fdfa; }
+    .theme-teal .projects-empty { color: #5eead4; }
+
+    /* Rose */
+    .theme-rose .countdown-card { background: #9f1239; }
+    .theme-rose .event-title { color: #fff1f2; }
+    .theme-rose .event-date-label { color: #fecdd3; }
+    .theme-rose .tile { background: rgba(255,255,255,0.12); }
+    .theme-rose .tile-num { color: #fff; }
+    .theme-rose .tile-lbl { color: #fda4af; }
+    .theme-rose .weeks-pill { background: rgba(255,255,255,0.12); color: #fecdd3; }
+    .theme-rose .weeks-pill strong { color: #fff; }
+    .theme-rose .progress-wrap { background: rgba(255,255,255,0.15); }
+    .theme-rose .progress-bar { background: #fda4af; }
+    .theme-rose .progress-header { color: #fecdd3; }
+    .theme-rose .status-msg { color: #fecdd3; }
+    .theme-rose .tz-label { color: #fb7185; }
+    .theme-rose .edit-btn { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); color: #ffe4e6; }
+    .theme-rose .edit-btn:hover { background: rgba(255,255,255,0.18); }
+    .theme-rose .clear-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); color: #fecdd3; }
+    .theme-rose .past-badge { background: rgba(255,255,255,0.15); color: #fde68a; }
+    .theme-rose .projects-title { color: #fff1f2; }
+    .theme-rose .projects-count { color: #fda4af; }
+    .theme-rose .add-project-row input { border-color: rgba(255,255,255,0.25); color: #fff1f2; }
+    .theme-rose .btn-add { border-color: rgba(255,255,255,0.25); color: #fff1f2; }
+    .theme-rose .project-item { background: rgba(255,255,255,0.08); }
+    .theme-rose .project-name { color: #fff1f2; }
+    .theme-rose .project-check { border-color: rgba(255,255,255,0.4); color: #fda4af; }
+    .theme-rose .project-delete { color: #fff1f2; }
+    .theme-rose .projects-empty { color: #fda4af; }
+
+    /* Amber */
+    .theme-amber .countdown-card { background: #92400e; }
+    .theme-amber .event-title { color: #fffbeb; }
+    .theme-amber .event-date-label { color: #fde68a; }
+    .theme-amber .tile { background: rgba(255,255,255,0.12); }
+    .theme-amber .tile-num { color: #fff; }
+    .theme-amber .tile-lbl { color: #fcd34d; }
+    .theme-amber .weeks-pill { background: rgba(255,255,255,0.12); color: #fde68a; }
+    .theme-amber .weeks-pill strong { color: #fff; }
+    .theme-amber .progress-wrap { background: rgba(255,255,255,0.15); }
+    .theme-amber .progress-bar { background: #fcd34d; }
+    .theme-amber .progress-header { color: #fde68a; }
+    .theme-amber .status-msg { color: #fde68a; }
+    .theme-amber .tz-label { color: #f59e0b; }
+    .theme-amber .edit-btn { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); color: #fef3c7; }
+    .theme-amber .edit-btn:hover { background: rgba(255,255,255,0.18); }
+    .theme-amber .clear-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); color: #fde68a; }
+    .theme-amber .past-badge { background: rgba(255,255,255,0.15); color: #fff; }
+    .theme-amber .projects-title { color: #fffbeb; }
+    .theme-amber .projects-count { color: #fcd34d; }
+    .theme-amber .add-project-row input { border-color: rgba(255,255,255,0.25); color: #fffbeb; }
+    .theme-amber .btn-add { border-color: rgba(255,255,255,0.25); color: #fffbeb; }
+    .theme-amber .project-item { background: rgba(255,255,255,0.08); }
+    .theme-amber .project-name { color: #fffbeb; }
+    .theme-amber .project-check { border-color: rgba(255,255,255,0.4); color: #fcd34d; }
+    .theme-amber .project-delete { color: #fffbeb; }
+    .theme-amber .projects-empty { color: #fcd34d; }
+
+    @media (max-width: 480px) {
+      .tiles { gap: 8px; }
+      .tile { min-width: 60px; padding: 0.75rem 0.875rem; }
+      .tile-num { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrap">
+
+  <!-- INPUT FORM -->
+  <div id="input-section" class="input-card">
+    <div id="saved-banner" class="saved-banner" style="display:none;">
+      <div class="saved-dot"></div>
+      <span>Your previous event was restored. Update below or just hit "Show countdown".</span>
+    </div>
+
+    <div class="field-wrap">
+      <span class="field-label">Event name</span>
+      <input type="text" id="event-name" placeholder="e.g. My Birthday, Team Retreat…" />
+      <div class="error-msg" id="err-name">Please enter an event name.</div>
+    </div>
+
+    <div class="field-wrap">
+      <span class="field-label">Event date</span>
+      <input type="date" id="event-date" oninput="validateDate('event-date','err-event-date')" />
+      <div class="error-msg" id="err-event-date"></div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="field-wrap">
+      <span class="field-label">Start date <span class="optional-tag">optional — enables progress bar</span></span>
+      <input type="date" id="start-date" oninput="validateDate('start-date','err-start-date')" />
+      <div class="error-msg" id="err-start-date"></div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="field-wrap" style="margin-bottom:0;">
+      <span class="field-label">Background color <span class="optional-tag">pick a theme</span></span>
+      <div class="color-options">
+        <div class="color-swatch selected" data-theme="theme-default" style="background:#ebebea; border-color:#1a1a1a;" onclick="selectTheme(this)" title="Default"></div>
+        <div class="color-swatch" data-theme="theme-indigo" style="background:#3730a3;" onclick="selectTheme(this)" title="Indigo"></div>
+        <div class="color-swatch" data-theme="theme-teal" style="background:#0f766e;" onclick="selectTheme(this)" title="Teal"></div>
+        <div class="color-swatch" data-theme="theme-rose" style="background:#9f1239;" onclick="selectTheme(this)" title="Rose"></div>
+        <div class="color-swatch" data-theme="theme-amber" style="background:#92400e;" onclick="selectTheme(this)" title="Amber"></div>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="startCountdown()">Show countdown</button>
+  </div>
+
+  <!-- COUNTDOWN VIEW -->
+  <div id="countdown-section" style="display:none;">
+    <div id="countdown-card-wrap" class="theme-default">
+      <div class="countdown-card">
+        <div class="event-title" id="disp-name"></div>
+        <div class="event-date-label" id="disp-date"></div>
+        <div id="past-notice" class="past-badge" style="display:none;">This event has passed</div>
+
+        <div class="tiles">
+          <div class="tile"><div class="tile-num" id="t-days">0</div><div class="tile-lbl">days</div></div>
+          <div class="tile"><div class="tile-num" id="t-hours">0</div><div class="tile-lbl">hours</div></div>
+          <div class="tile"><div class="tile-num" id="t-mins">0</div><div class="tile-lbl">minutes</div></div>
+          <div class="tile"><div class="tile-num" id="t-secs">0</div><div class="tile-lbl">seconds</div></div>
+        </div>
+
+        <div class="weeks-pill" id="weeks-pill"><strong>0</strong>&nbsp;weeks to go</div>
+
+        <div id="progress-section" class="progress-section" style="display:none;">
+          <div class="progress-header">
+            <span id="prog-start-lbl"></span>
+            <span id="prog-pct-lbl">0%</span>
+            <span id="prog-end-lbl"></span>
+          </div>
+          <div class="progress-wrap"><div class="progress-bar" id="prog-bar" style="width:0%"></div></div>
+        </div>
+
+        <div class="status-msg" id="status-msg"></div>
+        <div class="tz-label">Taipei Time (UTC+8)</div>
+
+        <!-- Completed Projects -->
+        <div class="projects-section">
+          <hr class="projects-divider" />
+          <div class="projects-header">
+            <span class="projects-title">Completed projects</span>
+            <span class="projects-count" id="proj-count">0 projects</span>
+          </div>
+          <div class="add-project-row">
+            <input type="text" id="proj-input" placeholder="Enter project name…"
+              onkeydown="if(event.key==='Enter') addProject()" maxlength="80" />
+            <button class="btn-add" onclick="addProject()">+ Add</button>
+          </div>
+          <div class="projects-list" id="projects-list">
+            <div class="projects-empty" id="proj-empty">No projects added yet.</div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="edit-btn" onclick="editEvent()">Edit event</button>
+          <button class="clear-btn" onclick="clearSaved()">Reset &amp; clear memory</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const STORAGE_KEY = 'countdown_app_v1';
+  let ticker = null, eventDate = null, startDate = null;
+  let selectedTheme = 'theme-default', projects = [];
+
+  function pad(n) { return String(Math.floor(n)).padStart(2,'0'); }
+  function getTaipeiNow() { return new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Taipei'})); }
+  function formatShort(d) { return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+  function daysInMonth(y,m) { return new Date(y,m,0).getDate(); }
+  function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        eventName: document.getElementById('event-name').value.trim(),
+        eventDate: document.getElementById('event-date').value,
+        startDate: document.getElementById('start-date').value,
+        theme: selectedTheme, projects,
+        active: document.getElementById('countdown-section').style.display !== 'none'
+      }));
+    } catch(e) {}
+  }
+
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch(e) { return null; }
+  }
+
+  function clearSaved() {
+    if (!confirm('This will reset the countdown and clear all saved data. Continue?')) return;
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+    if (ticker) clearInterval(ticker);
+    projects = []; selectedTheme = 'theme-default';
+    document.getElementById('event-name').value = '';
+    document.getElementById('event-date').value = '';
+    document.getElementById('start-date').value = '';
+    document.querySelectorAll('.color-swatch').forEach((s,i) => s.classList.toggle('selected', i===0));
+    document.getElementById('countdown-section').style.display = 'none';
+    document.getElementById('input-section').style.display = 'block';
+    document.getElementById('saved-banner').style.display = 'none';
+  }
+
+  function isValidDateValue(val) {
+    if (!val) return { ok:true };
+    const p = val.split('-');
+    if (p.length!==3) return { ok:false, msg:'Invalid date format.' };
+    const y=parseInt(p[0]),m=parseInt(p[1]),d=parseInt(p[2]);
+    if (isNaN(y)||isNaN(m)||isNaN(d)) return { ok:false, msg:'Invalid date.' };
+    if (m<1||m>12) return { ok:false, msg:'Month must be between 1 and 12.' };
+    const max=daysInMonth(y,m);
+    if (d<1||d>max) {
+      const names=['January','February','March','April','May','June','July','August','September','October','November','December'];
+      return { ok:false, msg:names[m-1]+' '+y+' only has '+max+' days — day '+d+' doesn\'t exist.' };
+    }
+    return { ok:true };
+  }
+
+  function validateDate(inputId, errId) {
+    const val=document.getElementById(inputId).value;
+    const result=isValidDateValue(val);
+    const input=document.getElementById(inputId);
+    const errEl=document.getElementById(errId);
+    if (!result.ok) {
+      input.classList.add('error');
+      errEl.textContent=result.msg; errEl.classList.add('visible');
+    } else {
+      input.classList.remove('error');
+      errEl.textContent=''; errEl.classList.remove('visible');
+    }
+    return result.ok;
+  }
+
+  function selectTheme(el) {
+    document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedTheme=el.dataset.theme;
+  }
+
+  function applyThemeToSwatches(theme) {
+    document.querySelectorAll('.color-swatch').forEach(s=>s.classList.toggle('selected', s.dataset.theme===theme));
+  }
+
+  function parseLocalDate(val) {
+    const [y,m,d]=val.split('-').map(Number);
+    return new Date(y,m-1,d,0,0,0);
+  }
+
+  function startCountdown(skipValidation) {
+    if (!skipValidation) {
+      let valid=true;
+      const name=document.getElementById('event-name').value.trim();
+      if (!name) { document.getElementById('event-name').classList.add('error'); document.getElementById('err-name').classList.add('visible'); valid=false; }
+      else { document.getElementById('event-name').classList.remove('error'); document.getElementById('err-name').classList.remove('visible'); }
+      const dateVal=document.getElementById('event-date').value;
+      if (!dateVal) { document.getElementById('event-date').classList.add('error'); document.getElementById('err-event-date').textContent='Please select an event date.'; document.getElementById('err-event-date').classList.add('visible'); valid=false; }
+      else if (!validateDate('event-date','err-event-date')) { valid=false; }
+      const startVal=document.getElementById('start-date').value;
+      if (startVal&&!validateDate('start-date','err-start-date')) { valid=false; }
+      if (!valid) return;
+    }
+
+    const name=document.getElementById('event-name').value.trim();
+    const dateVal=document.getElementById('event-date').value;
+    const startVal=document.getElementById('start-date').value;
+
+    eventDate=parseLocalDate(dateVal);
+    startDate=startVal?parseLocalDate(startVal):null;
+
+    if (!skipValidation&&startDate&&startDate>=eventDate) {
+      document.getElementById('start-date').classList.add('error');
+      document.getElementById('err-start-date').textContent='Start date must be before the event date.';
+      document.getElementById('err-start-date').classList.add('visible');
+      return;
+    }
+
+    document.getElementById('disp-name').textContent=name;
+    document.getElementById('disp-date').textContent=eventDate.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    document.getElementById('countdown-card-wrap').className=selectedTheme;
+
+    const progSection=document.getElementById('progress-section');
+    if (startDate) {
+      progSection.style.display='block';
+      document.getElementById('prog-start-lbl').textContent=formatShort(startDate);
+      document.getElementById('prog-end-lbl').textContent=formatShort(eventDate);
+    } else { progSection.style.display='none'; }
+
+    renderProjects();
+    document.getElementById('input-section').style.display='none';
+    document.getElementById('countdown-section').style.display='block';
+    saveState();
+
+    if (ticker) clearInterval(ticker);
+    tick(); ticker=setInterval(tick,1000);
+  }
+
+  function tick() {
+    const now=getTaipeiNow();
+    const eventMs=eventDate.getTime(), nowMs=now.getTime();
+    const diff=eventMs-nowMs, isPast=diff<0, absDiff=Math.abs(diff);
+
+    document.getElementById('past-notice').style.display=isPast?'inline-block':'none';
+    const totalDays=Math.floor(absDiff/86400000);
+    const hours=Math.floor((absDiff%86400000)/3600000);
+    const mins=Math.floor((absDiff%3600000)/60000);
+    const secs=Math.floor((absDiff%60000)/1000);
+    const weeks=Math.floor(totalDays/7);
+
+    document.getElementById('t-days').textContent=totalDays;
+    document.getElementById('t-hours').textContent=pad(hours);
+    document.getElementById('t-mins').textContent=pad(mins);
+    document.getElementById('t-secs').textContent=pad(secs);
+    document.getElementById('weeks-pill').innerHTML='<strong>'+weeks+'</strong>&nbsp;week'+(weeks!==1?'s':'')+(isPast?' ago':' to go');
+
+    if (startDate) {
+      const startMs=startDate.getTime(), totalSpan=eventMs-startMs;
+      let pct=isPast?100:(nowMs>startMs?Math.min(Math.max(Math.round(((nowMs-startMs)/totalSpan)*100),0),100):0);
+      document.getElementById('prog-bar').style.width=pct+'%';
+      document.getElementById('prog-pct-lbl').textContent=pct+'%';
+    }
+
+    let msg=isPast
+      ?(totalDays===0?'That was today!':totalDays+' day'+(totalDays!==1?'s':'')+' ago')
+      :(totalDays===0?'The event is today!':totalDays+' day'+(totalDays!==1?'s':'')+' to go — you got this!');
+    document.getElementById('status-msg').textContent=msg;
+  }
+
+  function addProject() {
+    const input=document.getElementById('proj-input');
+    const name=input.value.trim();
+    if (!name) return;
+    projects.push({id:Date.now(),name});
+    input.value=''; renderProjects(); saveState(); input.focus();
+  }
+
+  function removeProject(id) {
+    projects=projects.filter(p=>p.id!==id);
+    renderProjects(); saveState();
+  }
+
+  function renderProjects() {
+    const list=document.getElementById('projects-list');
+    const empty=document.getElementById('proj-empty');
+    document.getElementById('proj-count').textContent=projects.length+(projects.length===1?' project':' projects');
+    list.querySelectorAll('.project-item').forEach(el=>el.remove());
+    if (projects.length===0) { empty.style.display='block'; return; }
+    empty.style.display='none';
+    projects.forEach(p=>{
+      const item=document.createElement('div');
+      item.className='project-item';
+      item.innerHTML='<div class="project-check"><svg viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 4L3.5 6.5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="project-name">'+escapeHtml(p.name)+'</span><button class="project-delete" onclick="removeProject('+p.id+')" title="Remove">✕</button>';
+      list.appendChild(item);
+    });
+  }
+
+  function editEvent() {
+    if (ticker) clearInterval(ticker);
+    document.getElementById('countdown-section').style.display='none';
+    document.getElementById('input-section').style.display='block';
+    saveState();
+  }
+
+  // Restore saved state on load
+  (function() {
+    const state=loadState();
+    if (!state||!state.eventDate||!state.eventName) return;
+    document.getElementById('event-name').value=state.eventName||'';
+    document.getElementById('event-date').value=state.eventDate||'';
+    document.getElementById('start-date').value=state.startDate||'';
+    if (state.theme) { selectedTheme=state.theme; applyThemeToSwatches(state.theme); }
+    if (Array.isArray(state.projects)) { projects=state.projects; }
+    document.getElementById('saved-banner').style.display='flex';
+    if (state.active) { startCountdown(true); }
+  })();
+</script>
+</body>
+</html>
