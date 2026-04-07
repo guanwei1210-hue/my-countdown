@@ -348,7 +348,7 @@
   // PASTE YOUR FIREBASE CONFIG HERE
   // (replace all the placeholder values below)
   // ─────────────────────────────────────────────
-const firebaseConfig = {
+  const firebaseConfig = {
   apiKey: "AIzaSyB5phXwiG2wJ2_JxsyL78vHdpmkLxdWYzI",
   authDomain: "my-countdown-f140e.firebaseapp.com",
   projectId: "my-countdown-f140e",
@@ -369,11 +369,18 @@ const firebaseConfig = {
   // ── AUTH ──
   function signIn() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).catch(e => alert('Sign-in failed: ' + e.message));
+    auth.signInWithRedirect(provider);
   }
   function signOut() {
     auth.signOut();
   }
+
+  // Handle redirect result when returning from Google sign-in
+  auth.getRedirectResult().catch(e => {
+    if (e && e.code !== 'auth/popup-closed-by-user') {
+      console.error('Redirect sign-in error:', e.message);
+    }
+  });
 
   auth.onAuthStateChanged(user => {
     currentUser = user;
